@@ -1,0 +1,155 @@
+```{r}
+market=120 #piacok száma
+n=6 #ennyien vannak egy piacon
+p=matrix(runif(n*market, 1, 100), n, market)
+
+dist=matrix(0, n, market)
+aggdist=matrix(0, n+1, market)
+
+for (m in 1:market)
+{
+    for (i in 1:n)
+    {
+      dist[i, m]=1
+      aggdist[i+1, m]=aggdist[i, m]+dist[i, m]
+    }
+
+(aggdist[ ,m] = aggdist[ ,m]/aggdist[n+1, m])
+    
+}
+```
+```{r}
+tav <- array(0, dim=c(n,n,m))
+ for (m in 1:market)
+ {
+   for (i in 1:n)
+    {
+      for (j in 1:n)
+      {
+        a=abs(aggdist[i, m]-aggdist[j, m])
+        tav[i, j, m]=min(a, 1-a)
+      }
+   }
+  }
+```
+Ugyanúgy kiszámolható a profit, itt viszont már tényleg szükség van az elkülönített pia-cokra
+
+```{r}
+prof <- function(tav)
+{
+for (m in 1:market)
+{
+  for (i in 1:n)
+  {
+    for (j in 1:n)
+    {
+      cost[i,j,m]=(tav[i,j,m])*t+p[j,m]
+    }
+    
+    if(cost[i,i, m] == min(cost[i, , m]))
+      {
+        for (k in 2:3)
+        {
+          j = order(cost[i, , m])[k]
+          kozombos = (p[j, m] - p[i, m])/(2*t) + tav[i,j, m]/2
+          demand[i, m] = demand[i, m] + kozom-bos  
+        }
+      }
+    profit[i, m]=max(demand[i, m]*p[i, m] - fixcost, 0.0001)
+  }
+}
+  return(profit)
+}
+```
+A rulettnek úgy kell működnie, hogy az adott piacon/városban sorsoljon ki n szülőt.
+```{r}
+rulett <- function(profit)
+{
+   aggprofit=matrix(0, n+1, market)
+   szulok=matrix(0, n, market)  
+
+  for (m in 1:market)
+    {
+      for (i in 1:n)
+      {
+        aggprofit[i+1, m]=aggprofit[i, m]+profit[i, m]
+      }
+    #megpörgetjük
+      for (i in 1:n)
+      {
+        veletlen=runif(1, 0, aggprofit[n+1,m])
+        szulok[i, m]=max(which(aggprofit[,m] < veletlen))
+      }
+  }
+   return(szulok)
+}
+```
+```{r}
+nextp <- function(x,szulok) #x majd a p lesz
+{
+  for (m in 1:market)  
+  {
+    for (i in 1:n)
+    {
+      mut=rnorm(1, 0, 0.08)
+      x[i, m]=max(0,min(p[szulok[i, m],m]+mut,100))
+    }
+  }
+  return(x)
+}
+```
+```{r}
+fixcost=0
+demand=matrix(0, n, market)
+profit=matrix(0, n, market)
+t=50
+cost= array(0, dim=c(n,n,market))
+
+gen=500
+historyr <- array(0, dim = c(gen,n,market))
+historyr[1, , ]=p
+profhis <- array(0, dim = c(gen,n,market))
+
+for (idoszak in 2:gen)
+{
+  profit=prof(tav)
+  szulok=rulett(profit)
+  p=nextp(p,szulok)
+  p=matrix(sample(p, n*market, replace = F), n, market)
+  
+  historyr[idoszak, , ] = p[n, market]
+  profhis[idoszak, , ]=profit
+}
+
+print("kész")
+```
+```{r}
+plot(rowMeans(historyr), type = "l")
+  mean(historyr) 
+  print("15. gen után")
+  mean(historyr[15:gen, , ])
+  min(historyr[15:gen, , ])
+  max(historyr[15:gen, , ])
+  plot(rowMeans(historyr[15:gen, , ]), type = "l")
+  print("50. gen után")
+  mean(historyr[50:gen, , ])
+  min(historyr[50:gen, , ])
+  max(historyr[50:gen, , ])
+plot(rowMeans(historyr[50:gen, , ]), type = "l")
+mean(historyr[250:gen, , ])
+plot(rowMeans(historyr[0:15, , ]), type = "l")
+
+sd(historyr[15:100, ,])
+sd(historyr[100:200, ,])
+sd(historyr[200:300, ,])
+sd(historyr[300:400, ,])
+sd(historyr[400:500, ,])
+```
+```{r}
+sd(historyr[15:100, ,])
+sd(historyr[100:200, ,])
+sd(historyr[200:300, ,])
+sd(historyr[300:400, ,])
+sd(historyr[400:500, ,])
+``` 
+```
