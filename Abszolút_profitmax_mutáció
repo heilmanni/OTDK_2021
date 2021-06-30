@@ -1,0 +1,162 @@
+```{r}
+market=120 #piacok száma
+n=6 #ennyien vannak egy piacon
+p=matrix(runif(n*market, 1, 100), n, market)
+
+dist=matrix(0, n, market)
+aggdist=matrix(0, n+1, market)
+
+for (m in 1:market)
+{
+
+    for (i in 1:n)
+    {
+      dist[i, m]=1
+      aggdist[i+1, m]=aggdist[i, m]+dist[i, m]
+    }
+
+(aggdist[ ,m] = aggdist[ ,m]/aggdist[n+1, m])
+    
+}
+```
+```{r}
+tav <- array(0, dim=c(n,n,m))
+ for (m in 1:market)
+ {
+   for (i in 1:n)
+    {
+      for (j in 1:n)
+      {
+        a=abs(aggdist[i, m]-aggdist[j, m])
+        tav[i, j, m]=min(a, 1-a)
+      }
+   }
+  }
+```
+```{r}
+prof <- function(tav)
+{
+for (m in 1:market)
+{
+  for (i in 1:n)
+  {
+    for (j in 1:n)
+    {
+      cost[i,j,m]=tav[i,j,m]*t+p[j,m]
+    }
+    
+    if(cost[i,i, m] == min(cost[i, , m]))
+      {
+        for (k in 2:3)
+        {
+          j = order(cost[i, , m])[k]
+          kozombos = (p[j, m] - p[i, m])/(2*t) + tav[i,j, m]/2
+          demand[i, m] = demand[i, m] + kozom-bos  
+        }
+      }
+    profit[i, m]=demand[i, m]*p[i, m] +0.0001
+  }
+}
+  return(profit)
+}
+```
+```{r}
+rulett <- function(profit)
+{
+szulok=0
+osszeg=0
+
+vektor<- as.vector(profit)
+
+  for (i in 1:(n*market))
+  {
+    osszeg[i+1]=vektor[i]+osszeg[i]
+  }
+
+  for (i in 1:(n*market))
+  {
+    veletlen=runif(1, 0, osszeg[(n*market+1)])
+    szulok[i]=max(which(osszeg < veletlen))
+  }
+return(szulok)
+}
+
+```
+```{r}
+nextp <- function(x,szulok) #x majd a p lesz
+{
+  
+  for (i in 1:(n*market))
+    {
+      mut=rnorm(1, 0, 0.08)
+      x[i]=max(0,min(arak[szulok[i]]+mut,100))
+    }
+  return(x)
+}
+```
+```{r}
+nextpB <- function(x,szulok) #x majd a p lesz
+{
+  
+  for (i in 1:(n*market))
+    {
+      mut=rnorm(1, 0, 0.08)
+      x[i]=max(0,min(arak[szulok[i]]+mut/(idoszak),100))
+    }
+  return(x)
+}
+```
+```{r}
+demand=matrix(0, n, market)
+profit=matrix(0, n, market)
+t=50
+cost= array(0, dim=c(n,n,market))
+arak <- as.vector(p)
+
+gen=100
+genB=500
+historym <- array(0, dim = c(genB,n,market))
+historym[1, , ]=p
+
+for (idoszak in 2:gen)
+{
+  profit=prof(tav)
+  szulok=rulett(profit)
+  p=nextp(p,szulok) 
+  arak <- as.vector(p)
+  
+  historym[idoszak, , ] = p[n, market]
+}
+
+for (idoszak in (gen+1):genB)
+{
+  profit=prof(tav)
+  szulok=rulett(profit)
+  p=nextpB(p,szulok)
+  arak <- as.vector(p)
+  
+  historym[idoszak, , ] = p[n, market]
+}
+
+print("kész")
+```
+```{r}
+plot(rowMeans(historym), type = "l")
+  mean(historym) 
+  plot(rowMeans(historym[0:15,,]), type = "l")
+  plot(rowMeans(historym[0:gen, , ]), type = "l")
+  plot(rowMeans(historym[(gen+1):genB, ,]), type = "l")
+  plot(rowMeans(historym[50:genB, ,]), type = "l")
+mean(historym[300:genB, , ])
+```
+```{r}
+szoras <- sd(historym[300:genB, ,])
+szoras
+sd(historym[15:100, ,])
+sd(historym[100:200, ,])
+sd(historym[200:300, ,])
+sd(historym[300:400, ,])
+sd(historym[400:500, ,])
+```
+ 
+ 
