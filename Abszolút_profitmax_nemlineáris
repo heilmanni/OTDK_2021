@@ -1,0 +1,209 @@
+```{r}
+market=120 #piacok száma
+n=6 #ennyien vannak egy piacon
+
+aggdist = (0:n)/n
+tav <- matrix(0, n, n)
+
+   for (i in 1:n)
+    {
+      for (j in 1:n)
+      {
+        a=abs(aggdist[i]-aggdist[j])
+        tav[i, j]=(min(a, 1-a))
+      }
+   }
+```
+```{r}
+koltseg_kul<- function(x,d,pA,pB)
+{
+  x^alfa-(d-x)^alfa+(pA - pB)/t
+}
+```
+
+```{r}
+kozombos<- function(x,d,pA,pB)
+{
+       koz_also=0
+       koz_felso=d 
+        x=d/2 
+
+            for (f in 1:10)
+            {
+              if (koltseg_kul(x,d,pA,pB) < 0) 
+              {
+                koz_also <- x 
+                x <- (x + koz_felso)/2 
+              } 
+              else
+                {
+                  koz_felso <- x
+                  x <- (x + koz_also)/2
+                 }
+            }
+       return(x)
+}
+```
+```{r}
+nyitott<- function(p_m)
+{
+cost = matrix(0, n, n)
+nyitva = matrix(0, n)   # az a bolt lesz 'nyitva', ahol legalább egy fogyasztó vásárol
+
+  for (i in 1:n)
+  {
+    for (j in 1:n)
+    {
+      cost[i,j]=((tav[i,j])^alfa)*t+p_m[j]
+    }
+    if(cost[i,i] == min(cost[i, ]))
+      {nyitva[i] = 1}    # nyitva van, ha minimá-lis itt a költség
+  }
+  return(nyitva)
+}
+```
+```{r}
+kereslet<- function(nyitva,p_m)
+{
+demand = matrix(0, n)
+
+  if(sum(nyitva) == 1)  # csak egy bolt van nyitva, mindenki itt vásárol
+    {
+    i = which(nyitva==1)
+    demand[i] = 1
+    }
+
+  if(sum(nyitva) == 2)  # két bolt van nyitva, van balra és jobbra is egy közömbös ember
+    {
+    i = min(which(nyitva==1))  
+    j = max(which(nyitva==1))
+    kozombos_1 = kozom-bos(x,tav[i,j],p_m[i],p_m[j]) #iterálva megke-resi az kozombost, x-et közelíti, a tav pedig a d
+    kozombos_2 = kozombos(x,1-tav[i,j],p_m[i],p_m[j])
+    demand[i] = kozombos_1 + kozombos_2
+    demand[j] = 1 - demand[i]
+    }
+
+  if(sum(nyitva) > 2)  # sok bolt van nyitva
+    {
+      for (k in 1:sum(nyitva))  # csak a nyitva lévő boltokon fut
+      {
+        i = which(nyitva==1)[k]
+        j = which(nyitva==1)[k %% sum(nyitva) + 1]  # %% a maradékos osztás. Ez azért kell, mert az utolsó bolt jobboldali szomszédja az első bolt.
+        
+        d = (j-i)/n 
+        if(j<i){d = 1+d}    # utolsó bolt jobbolda-li szomszédjánál máshogy működik a távol-ság
+        
+        kozombos_1 = kozom-bos(x,d,p_m[i],p_m[j])
+        demand[i] = demand[i] + kozombos_1
+        demand[j] = demand[j] + d - kozom-bos_1
+      }
+  }
+return(demand)
+}
+```
+```{r}
+prof <- function(p)
+{
+
+profit = matrix(0, n, market)
+
+for (m in 1:market)
+{
+  nyitva = nyitott(p[,m])
+  demand = kereslet(nyitva,p[,m])
+  profit[, m]=demand*p[, m] +0.0001
+}
+  return(profit)
+}
+```
+```{r}
+rulett <- function(profit)
+{
+szulok=0
+osszeg=0
+
+vektor<- as.vector(profit)
+
+  for (i in 1:(n*market))
+  {
+    osszeg[i+1]=vektor[i]+osszeg[i]
+  }
+
+  for (i in 1:(n*market))
+  {
+    veletlen=runif(1, 0, osszeg[(n*market+1)])
+    szulok[i]=max(which(osszeg < veletlen))
+  }
+return(szulok)
+}
+
+```
+```{r}
+nextp <- function(x,szulok) #x majd a p lesz
+{
+  
+  for (i in 1:(n*market))
+    {
+      mut=rnorm(1, 0, 0.08)
+      x[i]=max(0,min(arak[szulok[i]]+mut,100))
+    }
+  return(x)
+}
+```
+```{r}
+p=matrix(runif(n*market, 1, 100), n, market)
+
+t=50
+alfa=2
+
+arak <- as.vector(p)
+
+gen=2000
+history <- array(0, dim = c(gen,n,market))
+history[1, , ]=p
+
+for (idoszak in 2:gen)
+{
+  profit=prof(p)
+  szulok=rulett(profit)
+  p=nextp(p,szulok) #itt ezek már véletlensze-rűen vannak, mátrixba rendezve
+  arak <- as.vector(p)
+  
+  history[idoszak, , ] = p[, ]
+}
+
+print("kész")
+```
+```{r}
+plot(rowMeans(history), type = "l")
+  mean(history) 
+  print("15. gen után")
+  mean(history[15:gen, , ])
+  min(history[15:gen, , ])
+  max(history[15:gen, , ])
+  plot(rowMeans(history[15:gen, , ]), type = "l")
+  print("50. gen után")
+  mean(history[50:gen, , ])
+  min(history[50:gen, , ])
+  max(history[50:gen, , ])
+plot(rowMeans(history[50:gen, , ]), type = "l")
+mean(history[250:gen, , ])
+szoras <- sd(history[50:gen, , ])
+szoras
+relszor <- szoras/mean(history[50:gen, , ])
+relszor
+plot(rowMeans(history[0:15, , ]), type = "l")
+```
+```{r}
+sd(history[15:100, ,])
+sd(history[100:200, ,])
+sd(history[200:300, ,])
+sd(history[300:400, ,])
+sd(history[400:500, ,])
+sd(history[500:600, ,])
+sd(history[600:700, ,])
+sd(history[700:800, ,])
+sd(history[800:900, ,])
+sd(history[900:1000, ,])
+```
+```
