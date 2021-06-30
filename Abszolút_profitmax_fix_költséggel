@@ -1,0 +1,155 @@
+```{r}
+market=120 #piacok száma
+n=6 #ennyien vannak egy piacon
+p=matrix(runif(n*market, 1, 100), n, market)
+
+dist=matrix(0, n, market)
+aggdist=matrix(0, n+1, market)
+
+for (m in 1:market)
+{
+
+    for (i in 1:n)
+    {
+      dist[i, m]=1
+      aggdist[i+1, m]=aggdist[i, m]+dist[i, m]
+    }
+
+(aggdist[ ,m] = aggdist[ ,m]/aggdist[n+1, m])
+    
+}
+```
+```{r}
+tav <- array(0, dim=c(n,n,m))
+ for (m in 1:market)
+ {
+   for (i in 1:n)
+    {
+      for (j in 1:n)
+      {
+        a=abs(aggdist[i, m]-aggdist[j, m])
+        tav[i, j, m]=min(a, 1-a)
+      }
+   }
+  }
+```
+```{r}
+prof <- function(tav)
+{
+for (m in 1:market)
+{
+  for (i in 1:n)
+  {
+    for (j in 1:n)
+    {
+      cost[i,j,m]=tav[i,j,m]*t+p[j,m]
+    }
+    
+    if(cost[i,i, m] == min(cost[i, , m]))
+      {
+        for (k in 2:3)
+        {
+          j = order(cost[i, , m])[k]
+          kozombos = (p[j, m] - p[i, m])/(2*t) + tav[i,j, m]/2
+          demand[i, m] = demand[i, m] + kozom-bos  
+        }
+      }
+    profit[i, m]=max(demand[i, m]*p[i, m]-fixcost, 0.0001)
+  }
+}
+  return(profit)
+}
+```
+A rulettnek úgy kell működnie, hogy ne az adott városban, hanem összesítve sorsoljon ki szülőket.
+
+```{r}
+rulett <- function(profit)
+{
+szulok=0
+osszeg=0
+
+vektor<- as.vector(profit)
+
+  for (i in 1:(n*market))
+  {
+    osszeg[i+1]=vektor[i]+osszeg[i]
+  }
+
+  for (i in 1:(n*market))
+  {
+    veletlen=runif(1, 0, osszeg[(n*market+1)])
+    szulok[i]=max(which(osszeg < veletlen))
+  }
+return(szulok)
+}
+
+```
+```{r}
+nextp <- function(x,szulok) #x majd a p lesz
+{
+  
+  for (i in 1:(n*market))
+    {
+      mut=rnorm(1, 0, 0.08)
+      x[i]=max(0,min(arak[szulok[i]]+mut,150))
+    }
+  return(x)
+}
+```
+```{r}
+demand=matrix(0, n, market)
+profit=matrix(0, n, market)
+t=50
+fixcost=0
+cost= array(0, dim=c(n,n,market))
+arak <- as.vector(p)
+
+gen=500
+history <- array(0, dim = c(gen,n,market))
+history[1, , ]=p
+profhis <-  array(0, dim = c(gen,n,market))
+
+for (idoszak in 2:gen)
+{
+  profit=prof(tav)
+  profhis[idoszak, , ]=profit[i,m]
+  szulok=rulett(profit)
+  p=nextp(p,szulok) 
+  arak <- as.vector(p)
+  
+  history[idoszak, , ] = p[n, market]
+  
+}
+print("kész")
+```
+```{r}
+plot(rowMeans(history), type = "l")
+mean(history) 
+print("15. gen után")
+mean(history[15:gen, , ])
+min(history[15:gen, , ])
+max(history[15:gen, , ])
+plot(rowMeans(history[15:gen, , ]), type = "l")
+print("50. gen után")
+mean(history[50:gen, , ])
+min(history[50:gen, , ])
+max(history[50:gen, , ])
+plot(rowMeans(history[50:gen, , ]), type = "l")
+mean(history[250:gen, , ])
+
+print("profit")
+plot(rowMeans(profhis))
+mean(profhis)
+mean(profhis[15:gen, , ])
+mean(profhis[50:gen, , ])
+ 
+
+plot(rowMeans(history[0:15, , ]), type = "l")
+```
+```{r}
+sd(history[15:100, ,])
+sd(history[100:200, ,])
+sd(history[200:300, ,])
+sd(history[300:400, ,])
+sd(history[400:500, ,])
+```
